@@ -10,12 +10,17 @@ class Node extends Model {
     public $table = 't0202_node';
     protected $fillable = [
         'line_id',
+        'sequence',
         'name',
         'name_ref',
         'has_interchange',
         'in_service'
     ];
     public $timestamps = true;
+
+    public function line() {
+        return $this->belongsTo('App\Models\Line');
+    }
 
     public function showInterchange() {
         if (!$this->has_interchange) {

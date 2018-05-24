@@ -1,4 +1,13 @@
-    @foreach ($nodes as $node)
+    <style>
+        tr:nth-child(odd) {
+            background-color: #ECEBE4;
+        }
+        tr:nth-child(even) {
+            background-color: #DADDD8;
+        }
+    </style>
+   
+   @foreach ($nodes as $node)
     <h1 style="text-align: center;">
         {{ $node->name }}
     </h1>
@@ -15,8 +24,8 @@
 
             </tr>
         </thead>
+            <tbody>        
             @foreach ($node->nodes as $nodeDetail)
-                <tbody>
                     <tr>
                         <td> {{ $nodeDetail->id }} </td>
                         <td> {{ $nodeDetail->name }} </td>
@@ -28,9 +37,9 @@
                             <p>
                                 @foreach ($nodeDetail->showInterchange() as $interchange) 
                                     @if ($interchange->node_from_id == $nodeDetail->id)
-                                        {{ $interchange->line_to_name }}
+                                        {{ $interchange->line_to_name }} <br/>
                                     @else 
-                                        {{ $interchange->line_from_name }}
+                                        {{ $interchange->line_from_name }} <br/>
                                     @endif
                                     
                                 @endforeach
@@ -40,8 +49,8 @@
                             <td style="font-style:italic"> No Interchange Data</td>
                         @endif
                     </tr>
-                </tbody>
             @endforeach
+        </tbody>            
     </table>
     @else
     <p style="text-align: center;"> No data found for this line </p>

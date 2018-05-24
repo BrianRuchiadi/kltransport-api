@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Route extends Model {
-    public $table = 't0204_route';
+class RouteFare extends Model {
+    public $table = 't0205_route_fare';
     protected $fillable = [
-        'node_from_id',
-        'node_to_id'
+        'route_id',
+        'fare_type',
+        'fare'
     ];
     public $timestamps = true;
 }

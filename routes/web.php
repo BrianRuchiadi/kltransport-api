@@ -19,6 +19,16 @@ Route::group(['namespace' => '\Simulation', 'prefix' => '/simulation'], function
     Route::get('/lines', 'LineController@getLines');
     Route::get('/nodes', 'LineController@getNodes');
 
+    Route::get('/fares/{node}', 'FareController@getFaresByNodeId');
+
+    Route::get('/fares/{node}/cashless', 'FareController@getCashlessFaresByNodeId');
+    Route::post('/fares/update', 'FareController@createOrUpdateCashlessFares');
+
+    Route::get('/routes/{nodeOne}/{nodeTwo}', 'RouteController@routeFinder');
+    Route::get('/routes/display/{nodeOne}/{nodeTwo}', 'RouteController@displayRoutes');
+    Route::get('/routes/generate/{node}', 'RouteController@generateRouteByNodeId');
+    
+
 });
 
 Route::group(['namespace' => '\User\Api'], function () {
