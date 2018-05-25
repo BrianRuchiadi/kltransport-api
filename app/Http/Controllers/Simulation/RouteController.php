@@ -17,7 +17,6 @@ use App\Models\NodeInterchange;
 
 class RouteController extends Controller {
 
-
     function displayRoutes(Request $request, Node $nodeOne, Node $nodeTwo) {
         $routesM = new RouteManager();
         $routes = $routesM->retrieveBestRoute($nodeOne, $nodeTwo);
@@ -54,6 +53,13 @@ class RouteController extends Controller {
         // return back();
         return redirect("simulation/fares/$nextNode/cashless");
         
+    }
+
+    function generateRouteTransit(Request $request) {
+        $routeM = new RouteManager();
+        $routeM->generateTransitPoint();
+        
+        return 'ok';
     }
 
 }

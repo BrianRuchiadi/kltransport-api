@@ -24,11 +24,9 @@ Route::group(['namespace' => '\Simulation', 'prefix' => '/simulation'], function
     Route::get('/fares/{node}/cashless', 'FareController@getCashlessFaresByNodeId');
     Route::post('/fares/update', 'FareController@createOrUpdateCashlessFares');
 
-    Route::get('/routes/{nodeOne}/{nodeTwo}', 'RouteController@routeFinder');
     Route::get('/routes/display/{nodeOne}/{nodeTwo}', 'RouteController@displayRoutes');
     Route::get('/routes/generate/{node}', 'RouteController@generateRouteByNodeId');
-    
-
+    Route::get('/routes/generate', 'RouteController@generateRouteTransit');
 });
 
 Route::group(['namespace' => '\User\Api'], function () {

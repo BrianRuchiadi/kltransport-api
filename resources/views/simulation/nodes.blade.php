@@ -9,7 +9,7 @@
    
    @foreach ($nodes as $node)
     <h1 style="text-align: center;">
-        {{ $node->name }}
+       {{ $node->id }} - {{ $node->name }}
     </h1>
     @if (count($node->nodes) > 0)
     <table style="margin: 0 auto; width: 100vw;">
@@ -18,6 +18,7 @@
                 <th width="200" style="text-align: left">Id</th>
                 <th width="200" style="text-align: left">Name</th>
                 <th width="200" style="text-align: left">Name Ref</th>
+                <th width="200" style="text-align: left">Sequence</th>
                 <th width="200" style="text-align: left">Has Interchange</th>
                 <th width="80" style="text-align: left">In Service</th>
                 <th width="200">Show Interchange</th>
@@ -30,6 +31,7 @@
                         <td> {{ $nodeDetail->id }} </td>
                         <td> {{ $nodeDetail->name }} </td>
                         <td> {{ $nodeDetail->name_ref }} </td>
+                        <td> {{ $nodeDetail->sequence }} </td>
                         <td> {{ $nodeDetail->has_interchange }} </td>
                         <td> {{ $nodeDetail->in_service }} </td>
                         @if (!empty($nodeDetail->showInterchange()))
