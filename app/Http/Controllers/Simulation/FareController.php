@@ -26,18 +26,6 @@ class FareController extends Controller {
                 $value->node_to_line_id != 7 && $value->node_to_line_id != 8);
         });
         
-        // 1. KJ L
-        // 2. MR 
-        // 3. SP L
-        // 4. AP L
-        // 5. SBK
-        // 6. BRT
-        // 7. KTM S
-        // 8. KTM PK
-        // $fares = array_filter($fares, function($value){
-        //     return ($value->node_from_line_id == 3 || $value->node_to_line_id == 3);
-        // });
-
         return view('simulation.fares.cashless', [
             'node' => $node,
             'fares' => $fares,
@@ -46,45 +34,58 @@ class FareController extends Controller {
         ]);
     }
 
-    function createOrUpdateCashlessFares(Request $request) {
-        $nodeFromId = ($request->node_from_id <= $request->node_to_id) ? $request->node_from_id : $request->node_to_id;
-        $nodeToId = ($request->node_from_id > $request->node_to_id) ? $request->node_from_id : $request->node_to_id;
+    // TO BE UPDATED
+    // function createOrUpdateCashlessFares(Request $request) {
+    //     $nodeFromId = ($request->node_from_id <= $request->node_to_id) ? $request->node_from_id : $request->node_to_id;
+    //     $nodeToId = ($request->node_from_id > $request->node_to_id) ? $request->node_from_id : $request->node_to_id;
 
-        $route = Route::where('node_from_id', $nodeFromId)
-            ->where('node_to_id', $nodeToId)
-            ->first();
-        if (!$route) { return; }
+    //     $route = Route::where('node_from_id', $nodeFromId)
+    //         ->where('node_to_id', $nodeToId)
+    //         ->first();
+    //     if (!$route) { return; }
 
-        $type = '';
+    //     $type = '';
 
-        switch ($request->fare_type) {
-            case 'cash': $type = 'cash'; break;
-            case 'cashless': $type = 'cashless'; break;
-            case 'concession': $type = 'concession'; break;
-            case 'monthly': $type = 'monthly'; break;
-            case 'weekly': $type = 'weekly'; break;
-            default : $type = 'cash';
-        }
-        $existingFare = $this->getFare($route->id, $type);
-        if ($existingFare) {
-            $existingFare->update(['fare' => (float)$request->fare]);
-        } else {
-            RouteFare::create([
-                'route_id' => $route->id,
-                'fare_type' => $type,
-                'fare' => (float)$request->fare
-            ]);
-        }
+    //     switch ($request->fare_type) {
+    //         case 'cash': $type = 'cash'; break;
+    //         case 'cashless': $type = 'cashless'; break;
+    //         case 'concession': $type = 'concession'; break;
+    //         case 'monthly': $type = 'monthly'; break;
+    //         case 'weekly': $type = 'weekly'; break;
+    //         default : $type = 'cash';
+    //     }
+    //     $existingFare = $this->getFare($route->id, $type);
+    //     if ($existingFare) {
+    //         $existingFare->update(['fare' => (float)$request->fare]);
+    //     } else {
+    //         RouteFare::create([
+    //             'route_id' => $route->id,
+    //             'fare_type' => $type,
+    //             'fare' => (float)$request->fare
+    //         ]);
+    //     }
 
-        return back();
-    }
+    //     return back();
+    // }
 
-    function getFare($routeId, $type) {
-        $fare = RouteFare::where('route_id' , $routeId)
-            ->where('fare_type', $type)
-            ->first();
+    // function getFare($routeId, $type) {
+    //     $fare = RouteFare::where('route_id' , $routeId)
+    //         ->where('fare_type', $type)
+    //         ->first();
         
-        return $fare;
+    //     return $fare;
+    // }
+
+    function generateRouteFare() {
+        $routes = Route::all();
+
+        DB::transaction(function() use(&$routes){
+            foreach ($routes as $route) {
+                RouteFare::create([
+                    'route_id' => $route->id
+                ]);
+            }
+        });
     }
 
     function checkRoutesAvailability($nodeId) {

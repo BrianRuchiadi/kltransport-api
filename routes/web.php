@@ -15,11 +15,19 @@ Route::get('/', function () {
     die('kltransport api');
 });
 
-Route::group(['namespace' => '\Simulation', 'prefix' => '/simulation'], function(){
+Route::group(['namespace' => '\User\Api'], function() {
+    Route::get('/lines', 'LineController@getLines');
+    Route::get('/stations', 'StationController@getStations');
+    Route::get('/fares', 'FareController@getFares');
+    Route::get('/routes/{nodeOne}/{nodeTwo}/details', 'RouteController@getRouteDetails');
+});
+
+// This group is used for testing simulation only
+Route::group(['namespace' => '\Simulation', 'prefix' => '/simulation'], function() {
     Route::get('/lines', 'LineController@getLines');
     Route::get('/nodes', 'LineController@getNodes');
 
-    Route::get('/fares/{node}', 'FareController@getFaresByNodeId');
+    Route::get('/fares/generate', 'FareController@generateRouteFare');
 
     Route::get('/fares/{node}/cashless', 'FareController@getCashlessFaresByNodeId');
     Route::post('/fares/update', 'FareController@createOrUpdateCashlessFares');

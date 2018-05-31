@@ -16,6 +16,11 @@ class Node extends Model {
         'has_interchange',
         'in_service'
     ];
+    protected $hidden = [
+        'created_at',
+        'updated_at',
+        'deleted_at'
+    ];
     public $timestamps = true;
 
     public function line() {

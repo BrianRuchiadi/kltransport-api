@@ -46,17 +46,19 @@ class RouteManager {
         if (count($directInterchanges)) {
             $pathsList = $this->retrieveDirectTransitPaths($directInterchanges, $nodeFrom, $nodeTo);
             $paths = $this->retrieveShortestPath($pathsList);
-            $paths = $this->pathReorder($paths, $isFromNodeTwo);            
+            $paths = array_values($this->pathReorder($paths->toArray(), $isFromNodeTwo)); 
 
             return $paths;
         } 
 
         // case 3, multiple transit interchanges
-        $pathsList = $this->retrieveMultipleTransitPaths($nodeFrom, $nodeTo);
+        $paths = $this->retrieveMultipleTransitPaths($nodeFrom, $nodeTo);
+        $paths = $this->pathReorder($paths, $isFromNodeTwo); 
+        return $paths;
     }
 
     function retrieveDirectPath(Node $nodeFrom, Node $nodeTo) {
-        $nodes = $this->retrieveSurroundingNodes($nodeFrom, $nodeTo);
+        $nodes = $this->retrieveSurroundingSameLineNodes($nodeFrom, $nodeTo);
 
         return $nodes;
     }
@@ -66,11 +68,11 @@ class RouteManager {
 
         foreach ($directTransits as $transit) {
             $nodeFromTransit = Node::where('id', $transit->node_from_id)->first();
-            $nodeFromSurroundingNodes = $this->retrieveSurroundingNodes($nodeFrom, $nodeFromTransit);
+            $nodeFromSurroundingNodes = $this->retrieveSurroundingSameLineNodes($nodeFrom, $nodeFromTransit);
             
             $nodeToTransit = Node::where('id', $transit->node_to_id)
                 ->first();
-            $nodeToSurroundingNodes = $this->retrieveSurroundingNodes($nodeToTransit, $nodeTo);
+            $nodeToSurroundingNodes = $this->retrieveSurroundingSameLineNodes($nodeToTransit, $nodeTo);
 
             // merge to form one full paths
             $paths = $nodeFromSurroundingNodes->concat($nodeToSurroundingNodes);
@@ -86,28 +88,43 @@ class RouteManager {
             ->where('node_to_id', $nodeTo->id)
             ->first();
 
-        // for ($i = 1; $i <= $routeTransitPoint->total_interchanges; $i++) {
-        //     $interchangeId = "interchange_{$i}_id";
-        //     $interchange = NodeInterchange::find($routeTransitPoint->$interchangeId);
+        DB::transaction(function() use(&$nodeFrom, &$nodeTo, &$pathsList, &$routeTransitPoint) {
+            for ($i = 1; $i <= $routeTransitPoint->total_interchanges; $i++) {
+                $interchangeId = "interchange_{$i}_id";
+                $interchange = NodeInterchange::find($routeTransitPoint->$interchangeId);
 
-        //     dd(["node from", $nodeFrom, "interchange ", $interchange]);
-        //     // first interchange, correspond with from node and first interchange direction to node
-        //     if ($i == 1) {
+                if ($i == 1) {
+                    $nodeDestinationNowId = ($nodeFrom->line_id == $interchange->line_from_id) ? $interchange->node_from_id : $interchange->node_to_id;
+                    $nodeDestinationNow = Node::find($nodeDestinationNowId);
 
-        //     }
-        // }
-      
-        dd(["complete the multiple transit logic, but hold first, transit point logic needs to be fixed", $routeTransitPoint]);         
-    }
+                    $pathsList = $this->retrieveSurroundingSameLineNodes($nodeFrom, $nodeDestinationNow);
 
+                    $nodeDestinationNextId = ($nodeFrom->line_id != $interchange->line_from_id) ? $interchange->node_from_id : $interchange->node_to_id;
+                    $nodeDestinationNext = Node::find($nodeDestinationNextId);
+                    continue;
+                }
 
-    function retrieveLineInterchanges($lineId) {
-        $nodeInterchangesCaseOne = NodeInterchange::where('line_from_id', $lineId)->get();
-        $nodeInterchangesCaseTwo = NodeInterchange::where('line_to_id', $lineId)->get();
+                // need to detect reverse ordering.
+                $nodeDestinationNowId = ($interchange->line_from_id == $nodeDestinationNext->line_id) ? $interchange->node_from_id : $interchange->node_to_id;
+                $nodeDestinationNow = Node::find($nodeDestinationNowId);
 
-        $nodeInterchangesAll = $nodeInterchangesCaseOne->merge($nodeInterchangesCaseTwo);
+                $paths = $this->retrieveSurroundingSameLineNodes($nodeDestinationNext, $nodeDestinationNow);
+                $pathsList = $pathsList->concat($paths);
+                
+                $nodeDestinationNextId = ($interchange->line_from_id != $nodeDestinationNext->line_id) ? $interchange->node_from_id : $interchange->node_to_id;
+                $nodeDestinationNext = Node::find($nodeDestinationNextId);
 
-        return $nodeInterchangesAll;
+                if ($i == $routeTransitPoint->total_interchanges) {
+                    $paths = $this->retrieveSurroundingSameLineNodes($nodeDestinationNext, $nodeTo);
+                    $pathsList = $pathsList->concat($paths);
+                    
+                    continue;
+                }
+            }
+
+        });
+
+        return $pathsList;        
     }
 
     function retrieveShortestPath($pathsList) {
@@ -120,16 +137,16 @@ class RouteManager {
         }
     }
 
-    function retrieveSurroundingNodes(Node $nodeFrom, Node $nodeTo) {
+    function retrieveSurroundingSameLineNodes(Node $nodeFrom, Node $nodeTo) {
         $higherSequence = ($nodeFrom->sequence > $nodeTo->sequence) ? $nodeFrom->sequence : $nodeTo->sequence;
         $lowerSequence = ($nodeFrom->sequence > $nodeTo->sequence) ? $nodeTo->sequence : $nodeFrom->sequence;
 
         $nodes = Node::where('line_id', $nodeFrom->line_id)
             ->where('sequence', '>=' , $lowerSequence)
             ->where('sequence', '<=', $higherSequence)
+            ->with('line')
             ->get();
-
-        // if first node of the nodes is not nodeFrom, then reverse the entire order
+            // if first node of the nodes is not nodeFrom, then reverse the entire order
         if ($nodes[0]->id != $nodeFrom->id) {
             $nodes = $nodes->reverse();
         }
@@ -182,7 +199,6 @@ class RouteManager {
                     $smallerNode = ($fromNode->id <= $toNode->id) ? $fromNode : $toNode; 
                     $biggerNode = ($fromNode->id > $toNode->id) ? $fromNode : $toNode; 
 
-                    // need to add some logic here
                     if ($smallerNode->line_id == $interchangeRef->line_id) {
                         RouteTransitPoint::create([
                             'node_from_id' => $smallerNode->id,
@@ -217,15 +233,12 @@ class RouteManager {
                         'node_from_id' => $smallerNode->id,
                         'node_to_id' => $biggerNode->id,
                         'line_from_id' => $smallerNode->line_id,
-                        'line_to_id' => $biggerNode->line_id
+                        'line_to_id' => $biggerNode->line_id,
+                        'total_interchanges' => $interchangeRef->total_transit
                     ];
                     $data = array_merge($data, $interchangeIds);
 
-                    dd(["dataku", $data]);
-
                     RouteTransitPoint::create($data);
-                    
-    
                 }
             }
         });
@@ -234,6 +247,6 @@ class RouteManager {
     function pathReorder($paths, $isReorder) {
         if (!$isReorder){ return $paths; }
 
-        return $paths->reverse();
+        return array_reverse($paths->toArray());
     }
 }

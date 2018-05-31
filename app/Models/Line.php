@@ -11,7 +11,13 @@ class Line extends Model {
         'reference',
         'name',
         'icon',
-        'total_station'
+        'total_station',
+        'is_active'
+    ];
+    protected $hidden = [
+        'created_at',
+        'updated_at',
+        'deleted_at'
     ];
     public $timestamps = true;
 
