@@ -27,6 +27,11 @@ class Node extends Model {
         return $this->belongsTo('App\Models\Line');
     }
 
+    public function getNameAttribute($value)
+    {
+        return ucwords($value);
+    }
+
     public function showInterchange() {
         if (!$this->has_interchange) {
             return false;
