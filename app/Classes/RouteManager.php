@@ -246,7 +246,8 @@ class RouteManager {
 
     function pathReorder($paths, $isReorder) {
         if (!$isReorder){ return $paths; }
+        if (!is_array($paths)) { return array_reverse($paths->toArray()); }
 
-        return array_reverse($paths->toArray());
+        return array_reverse($paths);
     }
 }
